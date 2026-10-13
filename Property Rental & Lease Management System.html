@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Property Rental & Lease Management System</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@600;700&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);--bg:#f6efe6;--card:#fffaf3;--tx:#2b2118;--mu:#8a7866;--pr:#c1593a;--bd:#e6d8c6;--ok:#4f7a4e;--er:#b3362c;--sage:#e3ebdc;--sh:0 6px 22px rgba(90,60,30,.09)}
+@media(prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#1b1511;--card:#261e18;--tx:#f3e9dc;--mu:#b5a28d;--pr:#e8805a;--bd:#3a2f26;--ok:#8fb58c;--er:#ff7b6e;--sage:#2c3628;--sh:0 6px 22px rgba(0,0,0,.35)}}
+:root[data-theme="dark"]{--bg:#1b1511;--card:#261e18;--tx:#f3e9dc;--mu:#b5a28d;--pr:#e8805a;--bd:#3a2f26;--ok:#8fb58c;--er:#ff7b6e;--sage:#2c3628;--sh:0 6px 22px rgba(0,0,0,.35)}
+*{box-sizing:border-box}html{scroll-padding-top:env(safe-area-inset-top,0px);height:100%}
+body{margin:0;min-height:100%;color:var(--tx);font:15px/1.55 'DM Sans',system-ui,-apple-system,Segoe UI,Roboto,sans-serif;background:var(--bg) radial-gradient(circle at 8% 0%,rgba(193,89,58,.16),transparent 38%) fixed,radial-gradient(circle at 100% 100%,rgba(79,122,78,.18),transparent 40%) fixed}
+.wrap{max-width:1000px;margin:0 auto;padding:18px}
+.card{background:var(--card);border:1px solid var(--bd);border-radius:18px;padding:18px;margin-bottom:16px;box-shadow:var(--sh)}
+h1,h2{font-family:'Fraunces',Georgia,'Times New Roman',serif;letter-spacing:-.01em}
+h1{font-size:26px;margin:0 0 4px;color:var(--pr)}h2{font-size:19px;margin:0 0 12px;padding-bottom:8px;border-bottom:2px dotted var(--bd)}
+input,select,button{font:inherit;padding:9px 12px;border-radius:12px;border:1px solid var(--bd);background:var(--bg);color:var(--tx);max-width:100%}
+input:focus,select:focus{outline:2px solid var(--pr);outline-offset:1px}
+button{background:var(--pr);color:#fff;border:0;cursor:pointer;font-weight:600;border-radius:99px;padding:9px 18px;transition:transform .12s,box-shadow .12s}
+button:hover{transform:translateY(-1px);box-shadow:0 4px 12px rgba(193,89,58,.35)}
+button.s{background:transparent;color:var(--pr);border:1.5px solid var(--pr)}button.s:hover{box-shadow:none;background:var(--sage)}
+.row{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px}
+nav{display:flex;gap:6px;overflow-x:auto;margin-bottom:16px;padding:6px;background:var(--card);border:1px solid var(--bd);border-radius:99px;box-shadow:var(--sh)}
+nav button{background:transparent;color:var(--mu);border:0;white-space:nowrap;box-shadow:none}nav button:hover{box-shadow:none;color:var(--tx)}nav button.on{background:var(--pr);color:#fff}
+.tw{overflow-x:auto}table{border-collapse:collapse;width:100%;font-size:14px}th,td{text-align:left;padding:10px 8px;border-bottom:1px solid var(--bd);white-space:nowrap}
+th{color:var(--mu);font-weight:600;font-size:12px;text-transform:uppercase;letter-spacing:.06em}tr:hover td{background:var(--sage)}
+.tag{padding:2px 10px;border-radius:99px;font-size:12px;font-weight:600;background:var(--sage)}.Active,.Paid,.Available,.Resolved,.Approved{color:var(--ok)}.Pending,.Open,.Partial,.Occupied,.Progress{color:var(--pr);background:rgba(193,89,58,.12)}.Ended,.Rejected{color:var(--er);background:rgba(179,54,44,.1)}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(135px,1fr));gap:12px}.stat{border-left:5px solid var(--pr)}.stat b{display:block;font-family:'Fraunces',Georgia,serif;font-size:28px;color:var(--pr)}
+#msg{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(16px + env(safe-area-inset-bottom,0px));padding:11px 20px;border-radius:99px;color:#fff;display:none;z-index:9;box-shadow:var(--sh)}
+.mu{color:var(--mu);font-size:13px}.top{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:14px}
+</style></head><body><div class="wrap" id="app"></div><div id="msg"></div>
+<script>
+const today=()=>new Date().toISOString().slice(0,10);
+const addM=(d,n)=>{const x=new Date(d+"T00:00:00Z");x.setUTCMonth(x.getUTCMonth()+n);return x.toISOString().slice(0,10)};
+const mdiff=(a,b)=>{const x=new Date(a),y=new Date(b);return(y.getFullYear()-x.getFullYear())*12+y.getMonth()-x.getMonth()+1};
+function gp(st,l,from,cnt,seed){for(let i=0;i<cnt;i++){const due=addM(from,i);st.pays.push({id:st.n++,lid:l.id,due,paid:seed&&due<"2026-10-01"?l.rent:0})}}
+const seed=()=>{const st={n:100,
+users:[{id:1,name:"Admin",role:"admin",email:"admin@rental.com",pw:"admin123"},
+{id:2,name:"Ramesh Naidu",role:"owner",email:"ramesh@owner.com",pw:"owner123",ph:"9876500001"},
+{id:3,name:"Lakshmi Devi",role:"owner",email:"lakshmi@owner.com",pw:"owner123",ph:"9876500002"},
+{id:4,name:"Anil Verma",role:"tenant",email:"anil@tenant.com",pw:"tenant123",ph:"9876500003"},
+{id:5,name:"Divya Reddy",role:"tenant",email:"divya@tenant.com",pw:"tenant123",ph:"9876500004"},
+{id:6,name:"Suresh Babu",role:"tenant",email:"suresh@tenant.com",pw:"tenant123",ph:"9876500005"}],
+props:[{id:10,oid:2,name:"Green Villa Apartments",city:"Hyderabad",addr:"Madhapur"},{id:11,oid:2,name:"Sunrise Residency",city:"Warangal",addr:"Hanamkonda"},{id:12,oid:3,name:"Lake View Towers",city:"Hyderabad",addr:"Gachibowli"}],
+units:[{id:20,pid:10,no:"A-101",bhk:"2BHK",rent:15000,dep:30000,st:"Occupied"},{id:21,pid:10,no:"A-102",bhk:"1BHK",rent:9000,dep:18000,st:"Available"},{id:22,pid:11,no:"B-1",bhk:"2BHK",rent:12000,dep:24000,st:"Occupied"},{id:23,pid:11,no:"B-2",bhk:"3BHK",rent:18000,dep:36000,st:"Available"},{id:24,pid:12,no:"T-501",bhk:"3BHK",rent:25000,dep:50000,st:"Available"},{id:25,pid:12,no:"T-502",bhk:"2BHK",rent:20000,dep:40000,st:"Available"}],
+leases:[{id:30,uid:20,tid:4,s:"2026-01-01",e:"2026-12-31",rent:15000,dep:30000,ds:"Held",st:"Active"},{id:31,uid:22,tid:5,s:"2026-03-01",e:"2026-10-31",rent:12000,dep:24000,ds:"Held",st:"Active"},{id:32,uid:21,tid:6,s:"2025-01-01",e:"2025-12-31",rent:9000,dep:18000,ds:"Refunded",st:"Ended"}],
+pays:[],maint:[{id:40,uid:20,tid:4,issue:"Water leakage in bathroom",pri:"High",st:"Open",date:"2026-10-03"},{id:41,uid:22,tid:5,issue:"AC not cooling",pri:"Medium",st:"In Progress",date:"2026-09-28"}],
+insp:[{id:42,uid:20,date:"2026-06-15",cond:"Good",note:"Routine check, no damage"}],
+ren:[{id:43,lid:31,m:12,st:"Pending",date:"2026-10-05"}]};
+st.leases.forEach(l=>gp(st,l,l.s,Math.min(12,mdiff(l.s,l.e)),true));return st};
+let S;try{S=JSON.parse(localStorage.getItem("prlms")||"")||seed()}catch(e){S=seed()}
+const save=()=>{try{localStorage.setItem("prlms",JSON.stringify(S))}catch(e){}};
+let me=null,tab="",reg=false;
+const $=s=>document.querySelector(s),v=id=>$("#"+id).value.trim(),nid=()=>S.n++;
+const g=(a,id)=>S[a].find(x=>x.id==id)||{};
+const U=id=>g("users",id),UN=id=>{const u=g("units",id);return`${g("props",u.pid).name||"-"} / ${u.no||"-"}`};
+const esc=s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const inr=n=>"₹"+Number(n).toLocaleString("en-IN");
+function toast(t,ok=true){const m=$("#msg");m.textContent=t;m.style.background=ok?"var(--ok)":"var(--er)";m.style.display="block";setTimeout(()=>m.style.display="none",3000)}
+const tbl=(h,r)=>`<div class="tw"><table><tr>${h.map(x=>`<th>${x}</th>`).join("")}</tr>${r.length?r.map(x=>`<tr>${x.map(c=>`<td>${c}</td>`).join("")}</tr>`).join(""):`<tr><td colspan=${h.length} class="mu">No records</td></tr>`}</table></div>`;
+const tag=s=>`<span class="tag ${s.replace(/ /g,"").replace("InProgress","Progress")}">${s}</span>`;
+const card=(t,b)=>`<div class="card"><h2>${t}</h2>${b}</div>`;
+const adm=()=>me.role=="admin";
+const myProps=()=>S.props.filter(p=>adm()||p.oid==me.id),myUnits=()=>S.units.filter(u=>myProps().some(p=>p.id==u.pid));
+const inU=a=>S[a].filter(x=>myUnits().some(u=>u.id==x.uid)),myLeases=()=>inU("leases");
+const myPays=()=>S.pays.filter(p=>myLeases().some(l=>l.id==p.lid));
+const opts=(a,f)=>a.map(x=>`<option value=${x.id}>${esc(f(x))}</option>`).join("");
+const bal=p=>g("leases",p.lid).rent-p.paid;
+const ptag=p=>tag(p.paid>=g("leases",p.lid).rent?"Paid":p.paid>0?"Partial":"Pending");
+
+/* auth */
+function login(){const u=S.users.find(x=>x.email==v("em").toLowerCase()&&x.pw==$("#pw").value);if(!u)return toast("Invalid email or password",false);me=u;tab=tabs()[0];draw()}
+function register(){const e=v("rem").toLowerCase(),n=v("rn"),p=$("#rp").value,ph=v("rph");
+ if(n.length<2)return toast("Enter a valid name",false);if(!/^[^@\s]+@[^@\s]+\.[a-z]{2,}$/i.test(e))return toast("Invalid email format",false);
+ if(S.users.some(u=>u.email==e))return toast("Email already registered (UNIQUE)",false);if(!/^\d{10}$/.test(ph))return toast("Phone must be 10 digits",false);if(p.length<6)return toast("Password must be 6+ characters",false);
+ S.users.push({id:nid(),name:n,role:v("rr"),email:e,pw:p,ph});save();reg=false;toast("Registered! Please log in.");draw()}
+const logout=()=>{me=null;draw()};
+const tabs=()=>me.role=="tenant"?["Available Units","My Lease","Payments","Maintenance","Renewal"]:["Dashboard","Properties","Leases","Payments","Maintenance","Inspections","Renewals","Reports"].concat(adm()?["Users"]:[]);
+
+/* actions */
+function addProp(){const o=adm()?+v("po"):me.id,n=v("pn"),c=v("pc"),a=v("pa");if(!n||!c||!a)return toast("Fill all property fields",false);S.props.push({id:nid(),oid:o,name:n,city:c,addr:a});save();toast("Property added");draw()}
+function addUnit(){const pid=+v("up"),no=v("un"),r=+v("ur"),d=+v("ud");if(!pid)return toast("Add a property first",false);if(!no)return toast("Enter unit number",false);
+ if(!(r>=0)||v("ur")==="")return toast("Rent must be non-negative",false);if(!(d>=0)||v("ud")==="")return toast("Deposit must be non-negative",false);
+ if(S.units.some(u=>u.pid==pid&&u.no==no))return toast("Unit number already exists in property (UNIQUE)",false);
+ S.units.push({id:nid(),pid,no,bhk:v("ub"),rent:r,dep:d,st:"Available"});save();toast("Unit added");draw()}
+function addLease(){const uid=+v("lu"),tid=+v("lt"),s=v("ls"),e=v("le"),u=g("units",uid);
+ if(!uid||!tid)return toast("Select unit and tenant",false);if(!s||!e||e<=s)return toast("Lease end date must be after start date",false);
+ if(u.st!="Available")return toast("Only available units can be leased",false);
+ if(S.leases.some(l=>l.uid==uid&&l.st=="Active"&&s<=l.e&&e>=l.s))return toast("Overlapping active lease for this unit",false);
+ const l={id:nid(),uid,tid,s,e,rent:u.rent,dep:u.dep,ds:"Held",st:"Active"};S.leases.push(l);u.st="Occupied";gp(S,l,s,Math.min(12,mdiff(s,e)),false);save();toast("Lease created, deposit recorded");draw()}
+function endLease(id){const l=g("leases",id);l.st="Ended";l.ds="Refunded";g("units",l.uid).st="Available";save();toast("Lease ended, deposit refunded");draw()}
+function pay(id){const p=g("pays",id),b=bal(p),a=+prompt(`Amount to pay (balance ${b})`,b);if(!(a>0)||a>b)return toast("Invalid payment amount (must be >0 and ≤ balance)",false);p.paid+=a;save();toast("Payment recorded");draw()}
+function raiseM(){const l=+v("ml");if(!l)return toast("No active lease",false);if(!v("mi"))return toast("Describe the issue",false);
+ S.maint.push({id:nid(),uid:g("leases",l).uid,tid:me.id,issue:v("mi"),pri:v("mp"),st:"Open",date:today()});save();toast("Request submitted");draw()}
+function setM(id,st){g("maint",id).st=st;save();draw()}
+function addInsp(){const uid=+v("iu");if(!uid||!v("id"))return toast("Select unit and date",false);S.insp.push({id:nid(),uid,date:v("id"),cond:v("ic"),note:v("in")});save();toast("Inspection recorded");draw()}
+function reqRen(){const l=+v("rl");if(!l)return toast("No active lease",false);if(S.ren.some(r=>r.lid==l&&r.st=="Pending"))return toast("A renewal request is already pending",false);
+ S.ren.push({id:nid(),lid:l,m:+v("rm"),st:"Pending",date:today()});save();toast("Renewal requested");draw()}
+function decide(id,ok){const r=g("ren",id),l=g("leases",r.lid);r.st=ok?"Approved":"Rejected";if(ok){const old=l.e;l.e=addM(old,r.m);gp(S,l,addM(old,1),Math.min(r.m,12),false)}save();toast("Renewal "+r.st);draw()}
+function resetData(){if(confirm("Reset all demo data?")){S=seed();save();draw()}}
+
+/* views */
+const V={
+Dashboard:()=>{const us=myUnits(),oc=us.filter(u=>u.st=="Occupied").length,pp=myPays().filter(p=>p.paid<g("leases",p.lid).rent&&p.due<=today()),col=myPays().reduce((a,p)=>a+p.paid,0);
+ return `<div class="stats">${[["Properties",myProps().length],["Units",us.length],["Occupancy",us.length?Math.round(oc*100/us.length)+"%":"0%"],["Active leases",myLeases().filter(l=>l.st=="Active").length],["Overdue payments",pp.length],["Rent collected",inr(col)],["Open maintenance",inU("maint").filter(m=>m.st!="Resolved").length]].map(([k,n])=>`<div class="card stat"><b>${n}</b><span class="mu">${k}</span></div>`).join("")}</div><button class="s" onclick="resetData()">Reset demo data</button>`},
+Properties:()=>card("Add property",`<div class="row">${adm()?`<select id="po">${opts(S.users.filter(u=>u.role=="owner"),u=>u.name)}</select>`:""}<input id="pn" placeholder="Property name"><input id="pc" placeholder="City"><input id="pa" placeholder="Address"><button onclick="addProp()">Add</button></div>`)
+ +card("Add unit",`<div class="row"><select id="up">${opts(myProps(),p=>p.name)}</select><input id="un" placeholder="Unit no"><select id="ub"><option>1BHK</option><option>2BHK</option><option>3BHK</option></select><input id="ur" type="number" placeholder="Rent ₹"><input id="ud" type="number" placeholder="Deposit ₹"><button onclick="addUnit()">Add</button></div>`)
+ +card("Units",tbl(["Property","City","Unit","Type","Rent","Deposit","Status"],myUnits().map(u=>{const p=g("props",u.pid);return[esc(p.name),esc(p.city),esc(u.no),u.bhk,inr(u.rent),inr(u.dep),tag(u.st)]}))),
+Leases:()=>card("Create lease",`<div class="row"><select id="lu"><option value="">Available unit</option>${opts(myUnits().filter(u=>u.st=="Available"),u=>UN(u.id)+" "+inr(u.rent))}</select><select id="lt"><option value="">Tenant</option>${opts(S.users.filter(u=>u.role=="tenant"),u=>u.name)}</select><input id="ls" type="date"><input id="le" type="date"><button onclick="addLease()">Create</button></div>`)
+ +card("All leases",tbl(["Unit","Tenant","Start","End","Rent","Deposit","Status",""],myLeases().map(l=>[esc(UN(l.uid)),esc(U(l.tid).name),l.s,l.e,inr(l.rent),inr(l.dep)+" "+l.ds,tag(l.st),l.st=="Active"?`<button class="s" onclick="endLease(${l.id})">End lease</button>`:""]))),
+Payments:()=>{const own=me.role=="tenant",ps=own?S.pays.filter(p=>g("leases",p.lid).tid==me.id):myPays();
+ return card(own?"My rent payments":"Rent payments",tbl(["Lease unit","Tenant","Due date","Rent","Paid","Status",""],ps.map(p=>{const l=g("leases",p.lid);return[esc(UN(l.uid)),esc(U(l.tid).name),p.due,inr(l.rent),inr(p.paid),ptag(p),p.paid<l.rent&&l.st=="Active"?`<button onclick="pay(${p.id})">Pay</button>`:""]})))},
+Maintenance:()=>{const own=me.role=="tenant",ms=own?S.maint.filter(m=>m.tid==me.id):inU("maint"),al=S.leases.filter(l=>l.tid==me.id&&l.st=="Active");
+ return (own?card("Raise request",`<div class="row"><select id="ml">${opts(al,l=>UN(l.uid))}</select><input id="mi" placeholder="Describe the issue" style="flex:1"><select id="mp"><option>Low</option><option>Medium</option><option>High</option></select><button onclick="raiseM()">Submit</button></div>`):"")
+ +card("Maintenance requests",tbl(["Unit","Tenant","Issue","Priority","Date","Status",""],ms.map(m=>[esc(UN(m.uid)),esc(U(m.tid).name),esc(m.issue),m.pri,m.date,tag(m.st),own?"":m.st=="Open"?`<button onclick="setM(${m.id},'In Progress')">Start</button>`:m.st=="In Progress"?`<button onclick="setM(${m.id},'Resolved')">Resolve</button>`:""])))},
+Inspections:()=>card("Add inspection",`<div class="row"><select id="iu">${opts(myUnits(),u=>UN(u.id))}</select><input id="id" type="date"><select id="ic"><option>Good</option><option>Fair</option><option>Poor</option></select><input id="in" placeholder="Notes"><button onclick="addInsp()">Save</button></div>`)
+ +card("Inspection records",tbl(["Unit","Date","Condition","Notes"],inU("insp").map(i=>[esc(UN(i.uid)),i.date,i.cond,esc(i.note)]))),
+Renewals:()=>card("Lease renewals",tbl(["Unit","Tenant","Current end","Extend (months)","Requested","Status",""],S.ren.filter(r=>myLeases().some(l=>l.id==r.lid)).map(r=>{const l=g("leases",r.lid);return[esc(UN(l.uid)),esc(U(l.tid).name),l.e,r.m,r.date,tag(r.st),r.st=="Pending"?`<button onclick="decide(${r.id},true)">Approve</button> <button class="s" onclick="decide(${r.id},false)">Reject</button>`:""]}))),
+Reports:()=>{const ls=myLeases(),pr=myPays(),tot=pr.reduce((a,p)=>a+p.paid,0);
+ return card("Available units",tbl(["Unit","City","Type","Rent"],myUnits().filter(u=>u.st=="Available").map(u=>[esc(UN(u.id)),esc(g("props",u.pid).city),u.bhk,inr(u.rent)])))
+ +card("Active leases",tbl(["Unit","Tenant","Ends","Rent"],ls.filter(l=>l.st=="Active").map(l=>[esc(UN(l.uid)),esc(U(l.tid).name),l.e,inr(l.rent)])))
+ +card("Pending rent payments",tbl(["Tenant","Unit","Due","Balance"],pr.filter(p=>bal(p)>0).sort((a,b)=>a.due>b.due?1:-1).map(p=>[esc(U(g("leases",p.lid).tid).name),esc(UN(g("leases",p.lid).uid)),p.due,inr(bal(p))])))
+ +card("Tenant lease history",tbl(["Tenant","Unit","Start","End","Status"],ls.map(l=>[esc(U(l.tid).name),esc(UN(l.uid)),l.s,l.e,tag(l.st)])))
+ +card("Property occupancy",tbl(["Property","Total units","Occupied","Occupancy"],myProps().map(p=>{const us=S.units.filter(u=>u.pid==p.id),o=us.filter(u=>u.st=="Occupied").length;return[esc(p.name),us.length,o,us.length?Math.round(o*100/us.length)+"%":"0%"]})))
+ +card("Maintenance requests",tbl(["Unit","Issue","Priority","Status"],inU("maint").map(m=>[esc(UN(m.uid)),esc(m.issue),m.pri,tag(m.st)])))
+ +card("Lease renewals due (next 90 days)",tbl(["Unit","Tenant","Ends"],ls.filter(l=>l.st=="Active"&&l.e>=today()&&l.e<=addM(today(),3)).map(l=>[esc(UN(l.uid)),esc(U(l.tid).name),l.e])))
+ +card("Rent collected",`<b>${inr(tot)}</b> <span class="mu">across ${pr.filter(p=>p.paid>0).length} payments</span>`)},
+Users:()=>card("Users",tbl(["Name","Role","Email","Phone"],S.users.map(u=>[esc(u.name),u.role,esc(u.email),esc(u.ph||"-")]))),
+"Available Units":()=>card("Search available units",`<div class="row"><input id="q" placeholder="Search city / property / type" oninput="filt()"></div><div id="ul">${ulist("")}</div>`),
+"My Lease":()=>{const ls=S.leases.filter(l=>l.tid==me.id);return card("My leases & deposit",tbl(["Unit","Start","End","Rent","Deposit","Status"],ls.map(l=>[esc(UN(l.uid)),l.s,l.e,inr(l.rent),inr(l.dep)+" "+l.ds,tag(l.st)])))},
+Renewal:()=>{const al=S.leases.filter(l=>l.tid==me.id&&l.st=="Active");return card("Request renewal",`<div class="row"><select id="rl">${opts(al,l=>UN(l.uid)+" (ends "+l.e+")")}</select><select id="rm"><option value=6>6 months</option><option value=12>12 months</option><option value=24>24 months</option></select><button onclick="reqRen()">Request</button></div>`)
+ +card("My renewal requests",tbl(["Unit","Months","Date","Status"],S.ren.filter(r=>g("leases",r.lid).tid==me.id).map(r=>[esc(UN(g("leases",r.lid).uid)),r.m,r.date,tag(r.st)])))}
+};
+function ulist(q){q=q.toLowerCase();return tbl(["Property","City","Unit","Type","Rent/month","Deposit"],S.units.filter(u=>u.st=="Available").filter(u=>{const p=g("props",u.pid);return(p.name+p.city+u.bhk+u.no).toLowerCase().includes(q)}).map(u=>{const p=g("props",u.pid);return[esc(p.name),esc(p.city),esc(u.no),u.bhk,inr(u.rent),inr(u.dep)]}))}
+function filt(){$("#ul").innerHTML=ulist($("#q").value)}
+function draw(){const a=$("#app");
+ if(!me){a.innerHTML=reg?`<div class="card"><h1>Register</h1><div class="row"><input id="rn" placeholder="Full name"><input id="rem" placeholder="Email"><input id="rph" placeholder="Phone (10 digits)"><input id="rp" type="password" placeholder="Password"><select id="rr"><option value="tenant">Tenant</option><option value="owner">Owner</option></select></div><button onclick="register()">Register</button> <button class="s" onclick="reg=false;draw()">Back</button></div>`
+ :`<div class="card" style="max-width:420px;margin:40px auto"><h1>🏠 Property Rental System</h1><p class="mu">Log in as Owner, Tenant or Admin</p><p class="mu" style="margin-top:-6px">Developed by <b>Pasham Akshitha</b> · 25WU0102195</p><div class="row"><input id="em" placeholder="Email" style="flex:1"></div><div class="row"><input id="pw" type="password" placeholder="Password" style="flex:1"></div><div class="row"><button onclick="login()">Login</button><button class="s" onclick="reg=true;draw()">Register</button></div><hr style="border:0;border-top:1px solid var(--bd)"><p class="mu"><b>Demo logins</b><br>Owner: ramesh@owner.com / owner123<br>Tenant: anil@tenant.com / tenant123<br>Admin: admin@rental.com / admin123</p></div>`;return}
+ a.innerHTML=`<div class="top"><div><h1>Property Rental System</h1><span class="mu">${esc(me.name)} · ${me.role.toUpperCase()}</span></div><button class="s" onclick="logout()">Logout</button></div><nav>${tabs().map(t=>`<button class="${t==tab?"on":""}" onclick="tab='${t}';draw()">${t}</button>`).join("")}</nav>${V[tab]()}<p class="mu" style="text-align:center;margin-top:20px">Developed by Pasham Akshitha · 25WU0102195</p>`}
+draw();
+</script></body></html>
